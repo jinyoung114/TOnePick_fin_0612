@@ -107,6 +107,7 @@ export const uploadVoiceClone = async (recordedUris, voiceName, onSuccess) => {
             text: '확인',
             onPress: async () => {
               const { sound } = await Audio.Sound.createAsync({ uri: filePath });
+              await sound.setVolumeAsync(1.0); 
               await sound.playAsync();
               onSuccess?.();
             },

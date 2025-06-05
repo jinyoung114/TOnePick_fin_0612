@@ -14,6 +14,16 @@ import { Audio } from 'expo-av';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const profileImages = [
+  require('../../../../assets/profiles/프로필1.png'),
+  require('../../../../assets/profiles/프로필2.png'),
+  require('../../../../assets/profiles/프로필3.png'),
+  require('../../../../assets/profiles/프로필4.png'),
+  require('../../../../assets/profiles/프로필5.png'),
+  require('../../../../assets/profiles/프로필6.png'),
+  require('../../../../assets/profiles/프로필7.png'),
+];
+
 export default function DeletedVoicePage() {
   const navigation = useNavigation();
   const [voiceList, setVoiceList] = useState([]);
@@ -40,9 +50,10 @@ export default function DeletedVoicePage() {
           const daysDiff = (now - deletedAt) / (1000 * 60 * 60 * 24);
           return uid === userUid && daysDiff <= 30;
         }).map(doc => ({
-          name: `${doc.fields.voiceName?.stringValue || '삭제된 보이스'}`,
+          name: `${(doc.fields.voiceName?.stringValue || '삭제된 보이스').replace(/\(.*?\)/g, '').trim()}`,
           file: { uri: doc.fields.audioPath.stringValue },
           firestoreName: doc.name,
+          image: profileImages[Math.floor(Math.random() * profileImages.length)],
         }));
 
         setVoiceList(validVoices);
@@ -106,46 +117,46 @@ export default function DeletedVoicePage() {
     );
   };
 
-const handleRestore = async (index) => {
-  Alert.alert(
-    '복구 확인',
-    `'${voiceList[index].name}' 보이스를 복구하시겠습니까?`,
-    [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '복구',
-        onPress: async () => {
-          try {
-            const doc = voiceList[index];
-            await fetch('https://firestore.googleapis.com/v1/projects/tonpick-7e5d2/databases/(default)/documents/voice_id', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fields: {
-                  voiceName: { stringValue: doc.name },
-                  audioPath: { stringValue: doc.file.uri },
-                  uid: { stringValue: (await AsyncStorage.getItem('userUid')) || '' },
-                  isFavorite: { booleanValue: false },
-                  createdAt: { timestampValue: new Date().toISOString() },
-                }
-              })
-            });
+  const handleRestore = async (index) => {
+    Alert.alert(
+      '복구 확인',
+      `'${voiceList[index].name}' 보이스를 복구하시겠습니까?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '복구',
+          onPress: async () => {
+            try {
+              const doc = voiceList[index];
+              await fetch('https://firestore.googleapis.com/v1/projects/tonpick-7e5d2/databases/(default)/documents/voice_id', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  fields: {
+                    voiceName: { stringValue: doc.name },
+                    audioPath: { stringValue: doc.file.uri },
+                    uid: { stringValue: (await AsyncStorage.getItem('userUid')) || '' },
+                    isFavorite: { booleanValue: false },
+                    createdAt: { timestampValue: new Date().toISOString() },
+                  }
+                })
+              });
 
-            await fetch(`https://firestore.googleapis.com/v1/${doc.firestoreName}`, {
-              method: 'DELETE'
-            });
+              await fetch(`https://firestore.googleapis.com/v1/${doc.firestoreName}`, {
+                method: 'DELETE'
+              });
 
-            const updatedList = [...voiceList];
-            updatedList.splice(index, 1);
-            setVoiceList(updatedList);
-          } catch (err) {
-            Alert.alert('복구 실패', '복구 중 오류가 발생했습니다.');
-          }
+              const updatedList = [...voiceList];
+              updatedList.splice(index, 1);
+              setVoiceList(updatedList);
+            } catch (err) {
+              Alert.alert('복구 실패', '복구 중 오류가 발생했습니다.');
+            }
+          },
         },
-      },
-    ]
-  );
-};
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -164,7 +175,7 @@ const handleRestore = async (index) => {
       <ScrollView contentContainerStyle={styles.cardList}>
         {voiceList.map((voice, index) => (
           <View key={index} style={styles.card}>
-            <Image source={{ uri: 'https://placehold.co/80x80' }} style={styles.cardImage} />
+            <Image source={voice.image} style={styles.cardImage} />
             <Text style={styles.cardName}>{voice.name}</Text>
 
             <View style={styles.progressBarContainer}>
@@ -186,7 +197,7 @@ const handleRestore = async (index) => {
                 <Icon name="play-arrow" size={24} color="#1D1B20" />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDelete(index)}>
-                <Icon name="delete" size={20} color="#AEAEAE"top={1} />
+                <Icon name="delete" size={20} color="#AEAEAE" top={1} />
               </TouchableOpacity>
             </View>
 

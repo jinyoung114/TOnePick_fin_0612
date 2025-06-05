@@ -181,7 +181,7 @@ export default function FileDetailPage() {
     if (!pdfUri2) return;
     setLoading(true);
     try {
-      const res = await fetch('http://192.168.219.100:5000', {
+      const res = await fetch('http://192.168.219.101:5000', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: pdfUri2 }),

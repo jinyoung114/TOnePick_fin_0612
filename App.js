@@ -51,7 +51,12 @@ export default function App() {
   return (
     <BookNoteProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Signin">
+        <Stack.Navigator initialRouteName="Signin"
+          screenOptions={{
+            animation: 'fade', 
+            headerShown: false,
+          }}
+        >
           <Stack.Screen name="Signin" component={SigninScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ChangeIdScreen" component={ChangeIdScreen} options={{ headerShown: false }} />

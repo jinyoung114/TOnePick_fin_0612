@@ -181,7 +181,7 @@ export default function FileDetailPage() {
     if (!pdfUri2) return;
     setLoading(true);
     try {
-      const res = await fetch('http://192.168.219.101:5000', {
+      const res = await fetch('http://192.168.219.103:5000', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: pdfUri2 }),
@@ -279,7 +279,7 @@ export default function FileDetailPage() {
           }
           disabled={loading}
           style={{
-            backgroundColor: '#007AFF',
+            backgroundColor: '#705F5F',
             paddingVertical: 10,
             paddingHorizontal: 145,
             borderRadius: 15,

@@ -26,7 +26,9 @@ export default function RecordPage() {
   const [isNameModalVisible, setNameModalVisible] = useState(false);
   const [voiceName, setVoiceName] = useState('');
   const [recordedUris, setRecordedUris] = useState([]);
-
+  const [playingIndex, setPlayingIndex] = useState(null);
+  const [sound, setSound] = useState(null);
+  
   const startRecording = async () => {
     try {
       console.log('🔴 녹음 시작');
@@ -47,28 +49,76 @@ export default function RecordPage() {
   };
 
   const stopRecording = async () => {
-    console.log('⏹️ 녹음 중지');
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       console.log('녹음 파일 저장됨:', uri);
-      setRecordedUris(prev => [...prev, uri]);
       setRecording(null);
-      setRecordingModalVisible(false);
+  
+      Alert.alert(
+        '녹음 완료',
+        '녹음을 저장하시겠습니까?',
+        [
+          {
+            text: '아니요',
+            style: 'destructive',
+            onPress: async () => {
+              // 🔁 저장 안 하고 새로 녹음 시작
+              await startRecording(); // await 꼭 써줘야 이어지듯 녹음됨
+            },
+          },
+          {
+            text: '네',
+            onPress: () => {
+              setRecordedUris(prev => [...prev, uri]);
+              setRecordingModalVisible(false);
+            },
+          },
+        ],
+        { cancelable: false }
+      );
     } catch (err) {
       console.error('녹음 중지 실패:', err);
     }
   };
+  
+  
 
-  const playRecording = async (uri) => {
+  const playRecording = async (uri, index) => {
     try {
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      await sound.playAsync();
+      // 이미 재생 중이고 같은 인덱스면 중지
+      if (sound && playingIndex === index) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+        setPlayingIndex(null);
+        return;
+      }
+  
+      // 기존 재생 중이면 정리
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+  
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
+      setPlayingIndex(index);
+      await newSound.playAsync();
+  
+      // 재생 끝나면 상태 초기화
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setSound(null);
+          setPlayingIndex(null);
+        }
+      });
     } catch (err) {
       console.error('재생 실패:', err);
       Alert.alert('재생 오류', '녹음 파일을 재생할 수 없습니다.');
     }
   };
+  
 
   const recordScripts = [
     '복용을 중단하면 대부분 다시 원래 상태로 돌아가지만, \n일부 경우에는 일정 기간 약물의 효과가 지속되며 신체가 적응하는 시간이 필요합니다.',
@@ -106,14 +156,17 @@ export default function RecordPage() {
                 style={styles.playButton}
                 onPress={() => {
                   if (recordedUris[index]) {
-                    playRecording(recordedUris[index]);
+                    playRecording(recordedUris[index], index);
                   } else {
                     Alert.alert('알림', '녹음된 파일이 없습니다.');
                   }
                 }}
               >
-                <Text style={styles.playIcon}>▶</Text>
+                <Text style={styles.playIcon}>
+                  {playingIndex === index ? 'II' : '▶'}
+                </Text>
               </TouchableOpacity>
+
             </View>
           ))}
         </ScrollView>
